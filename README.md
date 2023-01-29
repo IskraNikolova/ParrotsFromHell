@@ -1,1 +1,1 @@
-# ParrotsFromHell
+# Non-fungible token (NFT) crypto collectibles - Parrots From Hell
