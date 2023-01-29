@@ -82,7 +82,7 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
 
         for (uint i = 0; i < counts_; i++) {
             uint256 tokenID = _randomMint(_msgSender());
-            _setTokenRoyalty(tokenID, _msgSender(), _feeNumerator);
+            _manageRoyalty(tokenID, _msgSender(), _feeNumerator);
             _totalSupply += 1;
             _splitBalance(msg.value.div(counts_));
         }
@@ -108,6 +108,20 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
         _safeMint(to_, tokenID);
 
         return tokenID;
+    }
+
+    function _manageRoyalty(
+        uint256 tokenID_,
+        address tokenOwner_,
+        uint96 feeNumerator_)
+        private {
+            uint96 fee = feeNumerator_;
+            if(tokenID_ <= 6) {
+                fee = 200;
+            } else if (tokenID_ <= 200) {
+                fee = 400;
+            }
+            _setTokenRoyalty(tokenID_, tokenOwner_, fee);
     }
 
     function _splitBalance(uint256 amount_)
