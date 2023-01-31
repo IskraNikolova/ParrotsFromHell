@@ -4,24 +4,28 @@ pragma solidity 0.8.7;
 import "./token/ERC721/extensions/ERC721Royalty.sol";
 import "./token/ERC721/extensions/ERC721Metadata.sol";
 import "./utils/math/SafeMath.sol";
+import "./ParrotsFromHell.sol";
 
-contract ParrotsFromHell is ERC721Metadata, ERC2981 {
+contract ParrotsFromHell2 is ERC721Metadata, ERC2981 {
     using SafeMath for uint256;
     
-    uint256 public constant MAX_NFT_SUPPLY = 666;
-    uint256 public constant MINT_PRICE = 10 ether;
+    uint256 public constant MAX_NFT_SUPPLY = 1332;
+    uint256 public constant MINT_PRICE = 5 ether;
 
     bool public paused = true;
     uint256 public pendingCount = MAX_NFT_SUPPLY;
 
     mapping(uint256 => address) public minters;
     mapping(address => uint256) public mintedByWallet;
+    mapping(address => bool) public dYGAAward;
 
+    ParrotsFromHell private _pfh;
     address[] private _admins;
     uint96 private _feeNumerator;
 
     uint256 private _totalSupply;
-    uint256[667] private _pendingIDs;
+    uint256[1333] private _pendingIDs;
+    uint256 private _freeCounts;
 
     // Giveaway winners
     mapping(uint256 => address) private _giveaways;
@@ -29,15 +33,18 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
     constructor(
         string memory baseURI_,
         string memory notRevealedUri_,
-        address[] memory admins_
+        address[] memory admins_,
+        address pfh_
     ) ERC721Metadata(
-        "ParrotsFromHell",
-        "PFH",
+        "ParrotsFromHell2",
+        "PFH2",
         baseURI_,
         notRevealedUri_,
         MAX_NFT_SUPPLY
     ){
-        _feeNumerator = 100;
+        _pfh = ParrotsFromHell(pfh_);
+        _freeCounts = MAX_NFT_SUPPLY.sub(666);
+        _feeNumerator = 200;
         _setDefaultRoyalty(_msgSender(), _feeNumerator);
         _admins = admins_;
     }
@@ -74,13 +81,13 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
     /// @param counts_ Counts of NFTs that will be minted.
     function mint(uint256 counts_)
         external payable {
-        require(pendingCount > 0, "ParrotsFromHell: All minted");
-        require(counts_ > 0, "ParrotsFromHell: Counts cannot be zero");
+        require(_freeCounts > 0, "ParrotsFromHell 2: All minted");
+        require(counts_ > 0, "ParrotsFromHell 2: Counts cannot be zero");
         require(totalSupply().add(counts_) <= MAX_NFT_SUPPLY,
-            "ParrotsFromHell: Sale already ended");
-        require(!paused, "ParrotsFromHell: The contract is paused");
+            "ParrotsFromHell 2: Sale already ended");
+        require(!paused, "ParrotsFromHell 2: The contract is paused");
         require(MINT_PRICE.mul(counts_) == msg.value,
-            "ParrotsFromHell: invalid value");
+            "ParrotsFromHell 2: invalid value");
 
         for (uint i = 0; i < counts_; i++) {
             uint256 tokenID = _randomMint(_msgSender());
@@ -88,14 +95,33 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
             _totalSupply += 1;
             _splitBalance(msg.value.div(counts_));
         }
+
+        _freeCounts = _freeCounts.sub(counts_);
+    }
+
+    /// @dev This function mints NFTs free for minters from first contract.
+    function mintFree()
+        external payable {
+        require(dYGAAward[_msgSender()], 
+            "ParrotsFromHell 2: You haven't permission for free mint");
+        require(_pfh.mintedByWallet[_msgSender()], 
+            "ParrotsFromHell 2: You haven't permission for free mint");    
+        require(totalSupply().add(1) <= MAX_NFT_SUPPLY,
+            "ParrotsFromHell 2: Sale already ended");
+
+        uint256 tokenID = _randomMint(_msgSender());
+        _manageRoyalty(tokenID, _msgSender(), _feeNumerator);
+        _totalSupply += 1;
+
+        dYGAAward[_msgSender()] = true;
     }
 
     function _randomMint(address to_)
         private returns (uint256) {
-        require(to_ != address(0), "ParrotsFromHell: Zero address!");
+        require(to_ != address(0), "ParrotsFromHell 2: Zero address!");
 
         require(totalSupply() < MAX_NFT_SUPPLY,
-            "ParrotsFromHell: Max supply reached!");
+            "ParrotsFromHell 2: Max supply reached!");
 
         uint256 randomIn = _getRandom()
             .mod(pendingCount)
@@ -118,9 +144,9 @@ contract ParrotsFromHell is ERC721Metadata, ERC2981 {
         private {
             uint96 fee = feeNumerator_;
             if(tokenID_ <= 6) {
-                fee = 600;
+                fee = 800;
             } else if (tokenID_ <= 100) {
-                fee = 200;
+                fee = 400;
             }
             _setTokenRoyalty(tokenID_, tokenOwner_, fee);
     }
