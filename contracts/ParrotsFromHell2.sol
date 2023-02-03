@@ -104,14 +104,17 @@ contract ParrotsFromHell2 is ERC721Metadata, ERC2981 {
         external payable {
         require(dYGAAward[_msgSender()], 
             "ParrotsFromHell 2: You haven't permission for free mint");
-        require(_pfh.mintedByWallet[_msgSender()], 
+        require(_pfh.balanceOf(_msgSender()) > 0, 
             "ParrotsFromHell 2: You haven't permission for free mint");    
         require(totalSupply().add(1) <= MAX_NFT_SUPPLY,
             "ParrotsFromHell 2: Sale already ended");
 
-        uint256 tokenID = _randomMint(_msgSender());
-        _manageRoyalty(tokenID, _msgSender(), _feeNumerator);
-        _totalSupply += 1;
+        uint256 counts_ = _pfh.balanceOf(_msgSender());
+        for (uint256 i = 0; i < counts_; i++) {
+            uint256 tokenID = _randomMint(_msgSender());
+            _manageRoyalty(tokenID, _msgSender(), _feeNumerator);
+            _totalSupply += 1;
+        }
 
         dYGAAward[_msgSender()] = true;
     }
